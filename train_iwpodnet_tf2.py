@@ -178,11 +178,11 @@ if __name__ == '__main__':
 	#
 	#  Callbacks
 	#  
-	
+	steps_per_epoch = int(np.floor(len(Data) / batch_size))
 	# -> Model Chekcpoints --  save evey "save_epochs" epochs
 	ckpt = ModelCheckpoint(
     filepath = model_path_final + '_epoch{epoch:03d}.keras',
-    save_freq = 'epoch', # Change from math to 'epoch'
+    save_freq = save_epochs * steps_per_epoch, # save every "save_epochs" epochs
     verbose = 1
 	)
 
