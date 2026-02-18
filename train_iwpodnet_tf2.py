@@ -18,7 +18,7 @@ import cv2
 import pandas as pd
 import argparse
 from tensorflow import keras
-
+from sklearn.model_selection import train_test_split
 from os.path import isfile, isdir, splitext
 from os import makedirs
 
@@ -164,8 +164,10 @@ if __name__ == '__main__':
 
 	#
 	#  Training generator with lots of data augmentation	
-	#
-	train_generator = ALPRDataGenerator(Data, batch_size = batch_size, dim =  dim, stride = int(model_stride), shuffle=True, OutputScale = 1.0)
+	
+	train_data, val_data = train_test_split(Data, test_size=0.1, random_state=42)
+	train_generator = ALPRDataGenerator(train_data, batch_size = batch_size, dim =  dim, stride = int(model_stride), shuffle=True, OutputScale = 1.0)
+	val_generator = ALPRDataGenerator(val_data, batch_size = batch_size, dim =  dim, stride = int(model_stride), shuffle=False, OutputScale = 1.0)
 
 	#
 	#  Compiles Model
@@ -178,11 +180,11 @@ if __name__ == '__main__':
 	#
 	#  Callbacks
 	#  
-	steps_per_epoch = int(np.floor(len(Data) / batch_size))
+	steps_per_epoch = len(train_data) // batch_size
 	# -> Model Chekcpoints --  save evey "save_epochs" epochs
 	ckpt = ModelCheckpoint(
     filepath = model_path_final + '_epoch{epoch:03d}.keras',
-    save_freq = save_epochs * steps_per_epoch, # save every "save_epochs" epochs
+    save_freq = int(save_epochs * steps_per_epoch), # save every "save_epochs" epochs
     verbose = 1
 	)
 
@@ -191,7 +193,7 @@ if __name__ == '__main__':
 		  
 	      
 	# -> early stopping criteria -- not currently used		
-	es = EarlyStopping(monitor='loss',
+	es = EarlyStopping(monitor='val_loss',
 	                     patience = MaxEpochs//30,
 	                     restore_best_weights = False)
 	
@@ -202,7 +204,8 @@ if __name__ == '__main__':
 	print('Starting to train the model')
 	history = model.fit(x = train_generator,
 	                      steps_per_epoch = int(np.floor(len(Data)/batch_size)),
-	                      epochs = MaxEpochs, 
+	                      epochs = MaxEpochs,
+						validation_data = val_generator, 
 	                      verbose = 1,
 	                      callbacks=[learn_control, ckpt, es])  
 
