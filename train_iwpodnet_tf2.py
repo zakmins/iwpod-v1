@@ -181,8 +181,9 @@ if __name__ == '__main__':
 	
 	# -> Model Chekcpoints --  save evey "save_epochs" epochs
 	ckpt = ModelCheckpoint(
-		filepath = model_path_final + '_epoch{epoch:03d}.h5',
-		save_freq= int( np.floor(len(Data)/batch_size)*save_epochs)  # defines frequency of checkpoints
+    filepath = model_path_final + '_epoch{epoch:03d}.keras',
+    save_freq = 'epoch', # Change from math to 'epoch'
+    verbose = 1
 	)
 
 	# -> Learning rate control -- can also reduce learning rate dynamically		
@@ -200,10 +201,10 @@ if __name__ == '__main__':
 	#
 	print('Starting to train the model')
 	history = model.fit(x = train_generator,
-	                      steps_per_epoch = np.floor(len(Data)/batch_size),
+	                      steps_per_epoch = int(np.floor(len(Data)/batch_size)),
 	                      epochs = MaxEpochs, 
 	                      verbose = 1,
-	                      callbacks=[learn_control, ckpt])  
+	                      callbacks=[learn_control, ckpt, es])  
 
 
 	print('Finished to train the model')
@@ -212,11 +213,10 @@ if __name__ == '__main__':
 	#  Saves training details to excel file
 	#
 	df = pd.DataFrame(history.history)
-	df.to_excel(model_path_final + '.xlsx')
-	
+	df.index.name = 'epoch'
+	df.to_csv(model_path_final + '_history.csv')
 	#
 	#  Saves trained weights and model (TF2) format
 	#
 	print ('Saving model (%s)' % model_path_final)
-	model.save_weights(model_path_final + '.h5', save_format  ='h5')
-	model.save(model_path_final)
+	model.save(model_path_final + '.keras')
